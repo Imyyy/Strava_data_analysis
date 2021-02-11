@@ -1,0 +1,21 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{python}
+
+```
+
+Have to use command line to get this to work. Running them in the terminal and saving them here.
+```{bash}
+
+```
+
+
+
+
+
+
+
+

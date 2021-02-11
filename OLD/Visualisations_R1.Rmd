@@ -1,0 +1,13 @@
+---
+title: "Strava_Plots_R1"
+author: "Imy Younge"
+date: "09/05/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+```
+
+Following a tutorial from https://github.com/marcusvolz/strava.
+Need to download data first, following the iunstructions on the github.
