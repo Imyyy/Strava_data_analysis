@@ -1,0 +1,45 @@
+---
+title: "Strava_analysis"
+output: html_document
+---
+
+Analysis of the csv saved from Stravalib in jupyter.
+Choosing RMarkdown at the moment, might recreate in seaborn to try it out.
+```{r, return=FALSE}
+library(ggplot2)
+#install.packages("dplyr")
+```
+
+```{r, return = FALSE}
+data <- read.csv("/Users/imytest/Library/Mobile Documents/com~apple~CloudDocs/Documents/Projects_for_fun/Strava/Data/Saves_from_API/21_Feb_11th.csv")
+colnames(data)
+# data$type <- factor(data$type, levels = sort(levels(data$value))) # Refactoring the order of activities
+```
+```{r}
+#test = str_split(data$start_date_local, "-", n = 1)
+date <- data.frame(do.call("rbind", strsplit(as.character(data$start_date_local), "-", fixed = TRUE)))
+data$year <- date$X1
+
+twenty20 <- data[ which(data$year=='2020'), ]
+colnames(twenty20)
+```
+
+
+
+```{r}
+ggplot(data, aes(x = type, y=max_heartrate)) + 
+  geom_boxplot() +
+  labs(x = 'Activity', y = 'Distance')
+```
+
+
+```{r}
+ggplot(data, aes(x = max_heartrate, y=distance_km)) + 
+  geom_point() +
+  labs(x = 'Max heartrate', y = 'Distance')
+```
+
+
+```{r}
+```
+
