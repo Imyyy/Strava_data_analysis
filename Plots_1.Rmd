@@ -7,6 +7,10 @@ Analysis of the csv saved from Stravalib in jupyter.
 Choosing RMarkdown at the moment, might recreate in seaborn to try it out.
 ```{r, return=FALSE}
 library(ggplot2)
+library(ggridges)
+library(dplyr)
+library(plotly)
+#install.packages("ggridges")
 #install.packages("dplyr")
 ```
 
@@ -15,21 +19,65 @@ data <- read.csv("/Users/imytest/Library/Mobile Documents/com~apple~CloudDocs/Do
 colnames(data)
 # data$type <- factor(data$type, levels = sort(levels(data$value))) # Refactoring the order of activities
 ```
+Sorting out the original data frame
+```{r}
+summary(data)
+# refactor 'type'
+data <- data %>% mutate(day_of_week_str = fct_relevel(day_of_week,
+            ))
+days =c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")
+data <- data %>% 
+  mutate(day_of_week_str = factor(day_of_week,levels=days))
+twenty20 <- twenty20 %>% 
+  mutate(day_of_week_str = factor(day_of_week,levels=days))
+# refactor 'day_of_week'
+# add column on month by name 
+head(data)
+```
+# Learning plotly
+
+```{r}
+# fig <- plot_ly(data, x = ~percollege, color = ~state, type = "box")
+fig <- plot_ly(data, x = ~distance_km, color = ~type, type = "box")
+fig
+```
+
+```{r}
+fig <- plot_ly(twenty20, x = ~distance_km, y=~day_of_week_str, trace="bar")
+fig
+```
+
+
+
+
+# Traditional ggplot
+Initial plots that need refining
+
 ```{r}
 #test = str_split(data$start_date_local, "-", n = 1)
 date <- data.frame(do.call("rbind", strsplit(as.character(data$start_date_local), "-", fixed = TRUE)))
 data$year <- date$X1
 
-twenty20 <- data[ which(data$year=='2020'), ]
+twenty20 <- data[which(data$year=='2020'), ]
 colnames(twenty20)
 ```
 
 
 
+
+
+
+
+
+
+
+
 ```{r}
-ggplot(data, aes(x = type, y=max_heartrate)) + 
+ggplot(data, aes(x = type, y=distance_km, color = type)) + 
   geom_boxplot() +
-  labs(x = 'Activity', y = 'Distance')
+  labs(x = 'Activity', y = 'Distance') +
+  facet_grid(. ~ day_of_week_str) +
+  theme(axis.text.x = element_text(angle = 90))
 ```
 
 
@@ -39,7 +87,28 @@ ggplot(data, aes(x = max_heartrate, y=distance_km)) +
   labs(x = 'Max heartrate', y = 'Distance')
 ```
 
-
 ```{r}
+ggplot(data, aes(x = elapsed_time_hr, y= distance_km)) + 
+  geom_point() +
+  labs(x = 'Max heartrate', y = 'Distance')
+```
+
+
+*PLOTS TO MAKE:*
+Start latitude / londitude
+Start plotting a map of start longitude / latitude
+Cumulative distance over time
+Max speed by activity.
+Want to do some kind of ridge plot.
+Then integrate to plotly.
+
+
+## Ridge plots of activity over time
+Work in progress
+```{r}
+ggplot(data = twenty20, aes(x = start_date_local, y = month_of_year, group = month_of_year, height=max_heartrate)) +
+  geom_density_ridges(stat="identity", scale=1) +
+  theme_ridges() + 
+  theme(legend.position = "none")
 ```
 
