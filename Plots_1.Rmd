@@ -2,44 +2,112 @@
 title: "Strava_analysis"
 output: html_document
 ---
-
 Analysis of the csv saved from Stravalib in jupyter.
 Choosing RMarkdown at the moment, might recreate in seaborn to try it out.
 ```{r, return=FALSE}
 library(ggplot2)
-library(ggridges)
+library(ggridges) # get rid of if don't use
 library(dplyr)
 library(plotly)
-#install.packages("ggridges")
-#install.packages("dplyr")
 ```
 
+Import data.
 ```{r, return = FALSE}
 data <- read.csv("/Users/imytest/Library/Mobile Documents/com~apple~CloudDocs/Documents/Projects_for_fun/Strava/Data/Saves_from_API/21_Feb_11th.csv")
-colnames(data)
-# data$type <- factor(data$type, levels = sort(levels(data$value))) # Refactoring the order of activities
 ```
-Sorting out the original data frame
+
+Get data to a useable format.
+Reorder the days of the week and order of activities. Split the 'start date' column up to year / month / day. 
 ```{r}
-summary(data)
-# refactor 'type'
-data <- data %>% mutate(day_of_week_str = fct_relevel(day_of_week,
-            ))
-days =c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")
+days <- c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")
+type_order <- c("Ride","Run","Walk","Hike")
 data <- data %>% 
-  mutate(day_of_week_str = factor(day_of_week,levels=days))
-twenty20 <- twenty20 %>% 
-  mutate(day_of_week_str = factor(day_of_week,levels=days))
-# refactor 'day_of_week'
-# add column on month by name 
-head(data)
+  mutate(day_of_week_str = factor(day_of_week, levels=days)) %>%
+  mutate(type_order = factor(type, levels=type_order)) %>%
+  mutate(c_distance_km=cumsum(distance_km))
+date <- data.frame(do.call("rbind", strsplit(as.character(data$start_date_local), "-", fixed = TRUE)))
+month <- data.frame(do.call("rbind", strsplit(as.character(date$X3), " ", fixed = TRUE)))
+full_date <- data.frame(do.call("rbind", strsplit(as.character(data$start_date_local), " ", fixed = TRUE)))
+# Need to sort out these so they would make sense to someone else. 
+# Possibly do it from one string split?
+data$year <- date$X1
+data$month <- date$X2
+data$full_date <- full_date$X1
+data$day <- month$X1
+twenty20 <- data[which(data$year=='2020'), ]
+colnames(twenty20)
 ```
-# Learning plotly
+
+
+Add the months by name, and calculate the number of days since the beginning of the year for each month, leading to each activity. Add column of cumulative distance travelled.
+```{r}
+twenty20 <- twenty20
+twenty20$month_name <- with(twenty20, ifelse(
+  month_of_year == 1 , 'January', ifelse(
+  month_of_year == 2 , 'February', ifelse(
+  month_of_year == 3 , 'March', ifelse(
+  month_of_year == 4, 'April', ifelse(
+  month_of_year == 5, 'May', ifelse(
+  month_of_year == 6, 'June', ifelse(
+  month_of_year == 7, 'July',ifelse(
+  month_of_year == 8, 'August',ifelse(
+  month_of_year == 9, 'September',ifelse(
+  month_of_year == 10, 'October',ifelse(
+  month_of_year == 11, 'November',ifelse(
+  month_of_year == 12, 'December','NOT YET')))))))))))))
+
+twenty20$month_days_since_jan01 <- with(twenty20, ifelse(
+  month_of_year == 1 , 0, ifelse(
+  month_of_year == 2 , 31, ifelse(
+  month_of_year == 3 , 60, ifelse( # leap year
+  month_of_year == 4, 91, ifelse(
+  month_of_year == 5, 121, ifelse(
+  month_of_year == 6, 152, ifelse(
+  month_of_year == 7, 182,ifelse(
+  month_of_year == 8, 213,ifelse(
+  month_of_year == 9, 244,ifelse(
+  month_of_year == 10, 274,ifelse(
+  month_of_year == 11, 305,ifelse(
+  month_of_year == 12, 335,'NO')))))))))))))
+
+twenty20$day <- as.integer(twenty20$day)
+twenty20$month_days_since_jan01 <- as.integer(twenty20$month_days_since_jan01)
+twenty20$days_since_jan01 <- twenty20$month_days_since_jan01 + twenty20$day
+
+twenty20 <- twenty20 %>% 
+  arrange(days_since_jan01) %>%
+  mutate(distance_km_c = cumsum(distance_km))
+```
+
+# ggplots
+
+Overall view of activities. 
 
 ```{r}
-# fig <- plot_ly(data, x = ~percollege, color = ~state, type = "box")
-fig <- plot_ly(data, x = ~distance_km, color = ~type, type = "box")
-fig
+# Improve from days of the week to better metric
+overall_plot <- ggplot(twenty20, aes(x = day_of_week_str, y=distance_km, color=month_of_year)) + 
+  geom_point() +
+  labs(x = 'Activity', y = 'Distance') +
+  facet_grid(. ~ type) +
+  theme(axis.text.x = element_text(angle = 90))
+overall_plot
+```
+
+Plot of how much each activity has contributed to the overall distance travelled.
+```{r}
+total <- ggplot(twenty20, aes(x=days_since_jan01, y=distance_km_c, color=type)) +
+  geom_point() + 
+  theme_bw() + facet_grid(. ~ type) + labs(x="Days since beginning of year", y="Cumulative distance (km)")
+total
+```
+
+# Plotly interactive plots
+
+Need to try and integrate with ggplot -> think it will make sense https://plotly.com/ggplot2/cumulative-animations/
+
+```{r}
+distance <- plot_ly(data, x = ~distance_km, color = ~type, type = "box")
+distance
 ```
 
 ```{r}
@@ -47,68 +115,24 @@ fig <- plot_ly(twenty20, x = ~distance_km, y=~day_of_week_str, trace="bar")
 fig
 ```
 
-
-
-
 # Traditional ggplot
 Initial plots that need refining
 
-```{r}
-#test = str_split(data$start_date_local, "-", n = 1)
-date <- data.frame(do.call("rbind", strsplit(as.character(data$start_date_local), "-", fixed = TRUE)))
-data$year <- date$X1
-
-twenty20 <- data[which(data$year=='2020'), ]
-colnames(twenty20)
-```
 
 
 
 
 
-
-
-
-
-
-
-```{r}
-ggplot(data, aes(x = type, y=distance_km, color = type)) + 
-  geom_boxplot() +
-  labs(x = 'Activity', y = 'Distance') +
-  facet_grid(. ~ day_of_week_str) +
-  theme(axis.text.x = element_text(angle = 90))
-```
-
-
-```{r}
-ggplot(data, aes(x = max_heartrate, y=distance_km)) + 
-  geom_point() +
-  labs(x = 'Max heartrate', y = 'Distance')
-```
-
-```{r}
-ggplot(data, aes(x = elapsed_time_hr, y= distance_km)) + 
-  geom_point() +
-  labs(x = 'Max heartrate', y = 'Distance')
-```
-
-
-*PLOTS TO MAKE:*
-Start latitude / londitude
-Start plotting a map of start longitude / latitude
-Cumulative distance over time
-Max speed by activity.
-Want to do some kind of ridge plot.
-Then integrate to plotly.
 
 
 ## Ridge plots of activity over time
 Work in progress
 ```{r}
-ggplot(data = twenty20, aes(x = start_date_local, y = month_of_year, group = month_of_year, height=max_heartrate)) +
-  geom_density_ridges(stat="identity", scale=1) +
-  theme_ridges() + 
-  theme(legend.position = "none")
+ggplot(twenty20, aes(x = day, y = month_of_year)) +
+  geom_density_ridges(scale = 1) + 
+  scale_y_discrete(expand = c(0, 0)) +     # will generally have to set the `expand` option
+  scale_x_continuous(expand = c(0, 0)) +   # for both axes to remove unneeded padding
+  coord_cartesian(clip = "off") + # to avoid clipping of the very top of the top ridgeline
+  theme_ridges()
 ```
 
