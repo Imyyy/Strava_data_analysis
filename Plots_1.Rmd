@@ -17,6 +17,7 @@ data <- read.csv("/Users/imytest/Library/Mobile Documents/com~apple~CloudDocs/Do
 ```
 
 Get data to a useable format.
+I think that the distance might be in miles not km, as the greatest is 90, should be ~110
 Reorder the days of the week and order of activities. Split the 'start date' column up to year / month / day. 
 ```{r}
 days <- c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")
@@ -34,15 +35,45 @@ data$year <- date$X1
 data$month <- date$X2
 data$full_date <- full_date$X1
 data$day <- month$X1
-twenty20 <- data[which(data$year=='2020'), ]
-colnames(twenty20)
-```
 
+#twenty20 <- data[which(data$year=='2020'), ]
+```
+Want to be able to format per year --> needs to be a function.
 
 Add the months by name, and calculate the number of days since the beginning of the year for each month, leading to each activity. Add column of cumulative distance travelled.
 ```{r}
-twenty20 <- twenty20
-twenty20$month_name <- with(twenty20, ifelse(
+# Converting the code below to a function
+data_setup <- function(data_frame, year){
+  
+  year <- as.character(year)
+  data_frame <- data_frame[which(data_frame$year==year), ]
+  
+  days <- c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")
+  #type_order <- c("Ride","Run","Walk","Hike")
+  data_frame <- data_frame %>% 
+    mutate(day_of_week_str = factor(day_of_week, levels=days)) %>%
+    #mutate(type_order = factor(type, levels=type_order)) %>%
+    mutate(c_distance_km=cumsum(distance_km))
+  
+  date_df <- data.frame(do.call(
+    "rbind",strsplit(as.character(data_frame$start_date_local), "-", fixed = TRUE)))
+  data_frame$year <- date$X1
+  data_frame$month <- date$X2
+  full_date <- data.frame(
+    do.call("rbind",strsplit(as.character(data$start_date_local), " ", fixed=TRUE)))
+  data_frame$full_date <- full_date$X1
+  month <- data.frame(do.call(
+    "rbind", strsplit(as.character(date$X3), " ", fixed = TRUE)))
+  data_frame$day <- month$X1
+  data_frame$day <- as.integer(data_frame$day)
+  
+  if (year / 4 == 0 ){
+    leap_days = 29
+  } else {
+    leap_days = 28
+  }
+  
+  data_frame$month_name <- with(data_frame, ifelse(
   month_of_year == 1 , 'January', ifelse(
   month_of_year == 2 , 'February', ifelse(
   month_of_year == 3 , 'March', ifelse(
@@ -54,12 +85,12 @@ twenty20$month_name <- with(twenty20, ifelse(
   month_of_year == 9, 'September',ifelse(
   month_of_year == 10, 'October',ifelse(
   month_of_year == 11, 'November',ifelse(
-  month_of_year == 12, 'December','NOT YET')))))))))))))
+  month_of_year == 12, 'December', NaN)))))))))))))
 
-twenty20$month_days_since_jan01 <- with(twenty20, ifelse(
+  data_frame$month_days_since_jan01 <- with(twenty20, ifelse(
   month_of_year == 1 , 0, ifelse(
   month_of_year == 2 , 31, ifelse(
-  month_of_year == 3 , 60, ifelse( # leap year
+  month_of_year == 3 , (leap_days+31), ifelse(
   month_of_year == 4, 91, ifelse(
   month_of_year == 5, 121, ifelse(
   month_of_year == 6, 152, ifelse(
@@ -68,16 +99,25 @@ twenty20$month_days_since_jan01 <- with(twenty20, ifelse(
   month_of_year == 9, 244,ifelse(
   month_of_year == 10, 274,ifelse(
   month_of_year == 11, 305,ifelse(
-  month_of_year == 12, 335,'NO')))))))))))))
+  month_of_year == 12, 335, NaN)))))))))))))
+  
+  data_frame$month_days_since_jan01 <- as.integer(data_frame$month_days_since_jan01)
+  data_frame$days_since_jan01 <- data_frame$month_days_since_jan01 + twenty20$day
+  data_frame$day <- as.integer(data_frame$day)
+  
+  data_frame <- data_frame %>% 
+    arrange(days_since_jan01) %>%
+    mutate(distance_km_c = cumsum(distance_km))
+  
+  return(data_frame)
+}
 
-twenty20$day <- as.integer(twenty20$day)
-twenty20$month_days_since_jan01 <- as.integer(twenty20$month_days_since_jan01)
-twenty20$days_since_jan01 <- twenty20$month_days_since_jan01 + twenty20$day
+twenty20_test <- data_setup(data, 2020)
+colnames(twenty20_test)
 
-twenty20 <- twenty20 %>% 
-  arrange(days_since_jan01) %>%
-  mutate(distance_km_c = cumsum(distance_km))
 ```
+
+
 
 # ggplots
 
@@ -95,33 +135,43 @@ overall_plot
 
 Plot of how much each activity has contributed to the overall distance travelled.
 ```{r}
+total <- ggplot(twenty20, aes(x=days_since_jan01, y=distance_km, color=type)) +
+  geom_point() + 
+  theme_bw() + facet_grid(. ~ type) + labs(x="Days since beginning of year", y="Distance (km)")
+total
+```
+
+
+```{r}
 total <- ggplot(twenty20, aes(x=days_since_jan01, y=distance_km_c, color=type)) +
   geom_point() + 
-  theme_bw() + facet_grid(. ~ type) + labs(x="Days since beginning of year", y="Cumulative distance (km)")
+  theme_bw() + labs(x="Days since beginning of year", y="Distance (km)")
 total
+```
+
+```{r}
+over_year <- ggplot(twenty20, aes(x=days_since_jan01, y=distance_km, color=type)) +
+  geom_point() + 
+  theme_bw() + 
+  labs(x="Days since beginning of year", y="Cumulative distance (km)") + geom_line(aes(x=days_since_jan01, y=distance_km_c))
+over_year
 ```
 
 # Plotly interactive plots
 
 Need to try and integrate with ggplot -> think it will make sense https://plotly.com/ggplot2/cumulative-animations/
 
-```{r}
-distance <- plot_ly(data, x = ~distance_km, color = ~type, type = "box")
-distance
-```
 
 ```{r}
-fig <- plot_ly(twenty20, x = ~distance_km, y=~day_of_week_str, trace="bar")
+set.seed(955)
+#dat <- data.frame(cond = rep(c("A", "B"), each=10),xvar = 1:20 + rnorm(20,sd=3),yvar = 1:20 + rnorm(20,sd=3))
+
+p <- ggplot(twenty20, aes(x=days_since_jan01, y=distance_km_c)) +
+    geom_point(shape=1)
+fig <- ggplotly(p)
 fig
+
 ```
-
-# Traditional ggplot
-Initial plots that need refining
-
-
-
-
-
 
 
 
