@@ -19,6 +19,7 @@ data <- read.csv("/Users/imytest/Library/Mobile Documents/com~apple~CloudDocs/Do
 Get data to a useable format.
 Reorder the days of the week and order of activities. Split the 'start date' column up to year / month / day. Want to be able to format per year --> needs to be a function.
 Add the months by name, and calculate the number of days since the beginning of the year for each month, leading to each activity. Add column of cumulative distance travelled.
+For the post, can just do it linearly and edit to each year as I go.
 ```{r}
 data_setup <- function(data_frame, year_select){
   
@@ -79,7 +80,7 @@ data_setup <- function(data_frame, year_select){
   
   data_frame <- data_frame %>% 
     arrange(days_since_jan01) %>%
-    mutate(distance_km_c = cumsum(distance_km))
+    mutate(distance_km_c = cumsum(distance_km)) # Potentially don't need this because of the cumsum on ggplot variable
   
   data_frame$X <- NULL
   data_frame$id <- NULL
@@ -109,7 +110,8 @@ cumulative_distance_line <- ggplot(twenty20, aes(x = days_since_jan01, y=distanc
   labs(x = 'Activity', y = 'Distance') +
   scale_color_discrete(name = "Activity") +
   scale_x_continuous(breaks = seq(0,366,30)) +
-  scale_y_continuous(breaks = seq(0,2800,200))
+  scale_y_continuous(breaks = seq(0,2800,200)) +
+  theme_bw()
 cumulative_distance_line_plotly <- ggplotly(cumulative_distance_line)
 cumulative_distance_line_plotly
 ```
@@ -119,7 +121,8 @@ cumulative_distance_line <- ggplot(twenty21, aes(x = days_since_jan01, y=distanc
   labs(x = 'Activity', y = 'Distance') +
   scale_color_discrete(name = "Activity") +
   scale_x_continuous(breaks = seq(0,366,30)) +
-  #scale_y_continuous(breaks = seq(0,2800,200)) +
+  scale_y_continuous(breaks = seq(0,250,50)) + 
+  theme_bw() +
   geom_abline(slope = (2500/365), aes(colour='blue'))
 cumulative_distance_line_plotly <- ggplotly(cumulative_distance_line)
 cumulative_distance_line_plotly
@@ -130,7 +133,8 @@ cumulative_distance_line_plotly
 cumulative_distance <- ggplot(twenty20, aes(x = days_since_jan01, y=distance_km_c, color=type)) + 
   geom_point() +
   labs(x = 'Activity', y = 'Distance') +
-  scale_color_discrete(name = "Activity")
+  scale_color_discrete(name = "Activity") + 
+  theme_bw()
 cumulative_distance_plotly <- ggplotly(cumulative_distance)
 cumulative_distance_plotly
 ```
@@ -141,32 +145,35 @@ total <- ggplot(twenty20, aes(x=days_since_jan01, y=distance_km, color=type)) +
   geom_point() + 
   theme_bw() + facet_grid(. ~ type) + labs(x="Days since beginning of year", y="Distance (km)") + 
   # scale_x_continuous(limits = c(0, 120)) +
-  scale_y_continuous(breaks = seq(0,130,20))
+  scale_y_continuous(breaks = seq(0,130,10))
 total_plotly <- ggplotly(total)
 total_plotly
 ```
 
-
+# Cycling
+Look at only cycling activities.
 ```{r}
-total <- ggplot(twenty20, aes(x=days_since_jan01, y=distance_km_c, color=type)) +
-  geom_point() + 
-  theme_bw() + labs(x="Days since beginning of year", y="Distance (km)")
-total
+cycle <- twenty20[which(twenty20$type=='Ride'), ] # only 2020 atm, remake for the real thing
+dim(cycle)
 ```
 
-# Plotly interactive plots
-
-Need to try and integrate with ggplot -> think it will make sense https://plotly.com/ggplot2/cumulative-animations/
-
-
 ```{r}
-set.seed(955)
-#dat <- data.frame(cond = rep(c("A", "B"), each=10),xvar = 1:20 + rnorm(20,sd=3),yvar = 1:20 + rnorm(20,sd=3))
+cyc_distance <- ggplot(cycle, aes(x = days_since_jan01, y=cumsum(distance_km), color=day_of_week)) + 
+  geom_point() +
+  labs(x = 'Activity', y = 'Cumulative distance') +
+  scale_color_discrete(name = "Days through yaer") + 
+  theme_bw() +
+  scale_y_continuous(breaks = seq(0,2500,200))
+ggplotly(cyc_distance)
+```
 
-p <- ggplot(twenty20, aes(x=days_since_jan01, y=distance_km_c)) +
-    geom_point(shape=1)
-fig <- ggplotly(p)
-fig
+Trying to customise the info showed in the hoverlabels.
+https://stackoverflow.com/questions/58145084/ggplotly-rename-tooltip-on-hover. Same plot as above but to play around with the labels on.
+```{r}
+p <- ggplot(cycle, aes(label = name)) + 
+  theme_bw() +
+  geom_point(aes(x = days_since_jan01, y=cumsum(distance_km), color=day_of_week))
+ggplotly(p)
 ```
 
 
