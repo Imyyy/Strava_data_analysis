@@ -158,25 +158,24 @@ dim(cycle)
 ```
 
 ```{r}
-cyc_distance <- ggplot(cycle, aes(x = days_since_jan01, y=cumsum(distance_km), color=day_of_week)) + 
+cyc_distance <- ggplot(cycle, aes(x = days_since_jan01, y=cumsum(distance_km), color=day_of_week, text = name)) + 
   geom_point() +
   labs(x = 'Activity', y = 'Cumulative distance') +
-  scale_color_discrete(name = "Days through yaer") + 
+  scale_color_discrete(name = "Day") + 
   theme_bw() +
   scale_y_continuous(breaks = seq(0,2500,200))
-ggplotly(cyc_distance)
+ggplotly(cyc_distance, tooltip = "text")
 ```
 
-Trying to customise the info showed in the hoverlabels.
-https://stackoverflow.com/questions/58145084/ggplotly-rename-tooltip-on-hover. Same plot as above but to play around with the labels on.
 ```{r}
-p <- ggplot(cycle, aes(label = name)) + 
+cyc_hist <- ggplot(cycle, aes(x = max_heartrate)) + 
+  geom_histogram() +
+  labs(x = 'Activity', y = 'Cumulative distance') +
+  scale_color_discrete(name = "Day") + 
   theme_bw() +
-  geom_point(aes(x = days_since_jan01, y=cumsum(distance_km), color=day_of_week))
-ggplotly(p)
+  scale_y_continuous(breaks = seq(0,2500,200))
+ggplotly(cyc_hist)
 ```
-
-
 
 ## Ridge plots of activity over time
 Work in progress
