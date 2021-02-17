@@ -130,24 +130,21 @@ cumulative_distance_line_plotly
 
 
 ```{r}
-cumulative_distance <- ggplot(twenty20, aes(x = days_since_jan01, y=distance_km_c, color=type)) + 
+ggplotly((ggplot(twenty20, aes(x = days_since_jan01, y=distance_km_c, color=type, text=name)) + 
   geom_point() +
   labs(x = 'Activity', y = 'Distance') +
   scale_color_discrete(name = "Activity") + 
-  theme_bw()
-cumulative_distance_plotly <- ggplotly(cumulative_distance)
-cumulative_distance_plotly
+  theme_bw()), 
+  tooltip="text")
 ```
 
 Plot of how much each activity has contributed to the overall distance travelled.
+Gives an overview, so I can see where to zoom in more. 
 ```{r}
-total <- ggplot(twenty20, aes(x=days_since_jan01, y=distance_km, color=type)) +
+ggplotly((ggplot(twenty20, aes(x=days_since_jan01, y=distance_km, color=type, text=name)) +
   geom_point() + 
-  theme_bw() + facet_grid(. ~ type) + labs(x="Days since beginning of year", y="Distance (km)") + 
-  # scale_x_continuous(limits = c(0, 120)) +
-  scale_y_continuous(breaks = seq(0,130,10))
-total_plotly <- ggplotly(total)
-total_plotly
+  theme_bw() + facet_wrap(. ~ type) + labs(x="Days since beginning of year", y="Distance (km)") ), 
+  tooltip = "text")
 ```
 
 # Cycling

@@ -1,0 +1,122 @@
+---
+title: "Draft_1"
+output: html_document
+---
+
+# Intro
+Quick person
+Background
+
+I think will do accessing the data and analysing in seaborn in one, and then repeat in python.
+
+# Accessing data
+Tutorial to get data
+```{python}
+
+```
+
+
+
+# Analysis in R
+
+Import the packages we need
+```{r}
+library(ggplot2)
+library(ggridges) # get rid of if don't use
+library(dplyr)
+library(plotly)
+```
+
+*Formatting the data*
+First of all, we need to format the dataframe to a useable format.
+```{r}
+data <- read.csv("/Users/imytest/Library/Mobile Documents/com~apple~CloudDocs/Documents/Projects_for_fun/Strava/Data/Saves_from_API/21_Feb_11th.csv")
+```
+
+Now we are going to edit the start date local column, so that we have separate column for the year and month. 
+```{r}
+dates <- data.frame(do.call(
+    "rbind",strsplit(as.character(data$start_date_local), "-", fixed = TRUE)))
+data$year <- dates$X1
+data$month <- dates$X2
+# Then split that third column
+month_df <- data.frame(do.call( "rbind", strsplit(as.character(dates$X3), " ", fixed = TRUE)))
+data$day_number <- as.integer(month_df$X1)
+
+# Is this needed?
+#full_date <- data.frame(
+#    do.call("rbind",strsplit(as.character(data_frame$start_date_local), " ", fixed=TRUE)))
+#data$complete_date <- full_date$X1
+```
+
+Then, we're going to neaten up the days and months. Create a named column for each of the months, and order the days so that they plot in order.
+```{r}
+data$month_name <- with(dat, ifelse(
+  month_of_year == 1 , 'January', ifelse(
+  month_of_year == 2 , 'February', ifelse(
+  month_of_year == 3 , 'March', ifelse(
+  month_of_year == 4, 'April', ifelse(
+  month_of_year == 5, 'May', ifelse(
+  month_of_year == 6, 'June', ifelse(
+  month_of_year == 7, 'July',ifelse(
+  month_of_year == 8, 'August',ifelse(
+  month_of_year == 9, 'September',ifelse(
+  month_of_year == 10, 'October',ifelse(
+  month_of_year == 11, 'November',ifelse(
+  month_of_year == 12, 'December', NaN)))))))))))))
+ 
+days <- c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")
+data <- data %>% 
+    mutate(day_of_week_str = factor(day_of_week, levels=days)) %>%
+    mutate(c_distance_km=cumsum(distance_km))
+```
+
+
+Then, we are going to add string columns that convert the month number to a string (for neater plots)
+
+```{r}
+if (year_select/4 == 0){ # sort out how this interacts with the rest
+    leap_days = 29
+} else {
+    leap_days = 28
+}
+data$month_days_since_jan01 <- with(data, ifelse(
+  month_of_year == 1 , 0, ifelse(
+  month_of_year == 2 , 31, ifelse(
+  month_of_year == 3 , (leap_days+31), ifelse(
+  month_of_year == 4, 91, ifelse(
+  month_of_year == 5, 121, ifelse(
+  month_of_year == 6, 152, ifelse(
+  month_of_year == 7, 182,ifelse(
+  month_of_year == 8, 213,ifelse(
+  month_of_year == 9, 244,ifelse(
+  month_of_year == 10, 274,ifelse(
+  month_of_year == 11, 305,ifelse(
+  month_of_year == 12, 335, NaN)))))))))))))
+  
+data$month_days_since_jan01 <- as.integer(data$month_days_since_jan01)
+data$days_since_jan01 <- data$month_days_since_jan01 + data$day_number
+data$month_days_since_jan01 <-NULL
+  
+data <- data %>% arrange(days_since_jan01) %>%
+    mutate(distance_km_c = cumsum(distance_km)) # Potentially don't need this because of the cumsum on ggplot variable
+  
+  data_frame$X <- NULL
+  data_frame$id <- NULL
+  
+  year_comparison <- as.character(year_select)
+  data_frame <- data_frame[which(data_frame$year==year_comparison), ]
+  
+  return(data_frame)
+}
+```
+
+
+*Plots*
+
+
+
+# Analysis in python
+
+
+
