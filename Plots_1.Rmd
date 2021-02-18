@@ -160,7 +160,8 @@ cyc_distance <- ggplot(cycle, aes(x = days_since_jan01, y=cumsum(distance_km), c
   labs(x = 'Activity', y = 'Cumulative distance') +
   scale_color_discrete(name = "Day") + 
   theme_bw() +
-  scale_y_continuous(breaks = seq(0,2500,200))
+  scale_y_continuous(breaks = seq(0,2500,200) +
+  scale_fill_brewer(palette="”Blues”")) 
 ggplotly(cyc_distance, tooltip = "text")
 ```
 
@@ -174,6 +175,12 @@ cyc_hist <- ggplot(cycle, aes(x = max_heartrate)) +
 ggplotly(cyc_hist)
 ```
 
+```{r}
+ggplot(twenty20, aes(x=))
+```
+
+
+
 ## Ridge plots of activity over time
 Work in progress
 ```{r}
@@ -185,3 +192,15 @@ ggplot(twenty20, aes(x = day, y = month_of_year)) +
   theme_ridges()
 ```
 
+This is from Rosie Young's post on analysing plots in R, and then edited.
+```{r}
+ggplot(data, aes(x = moving_time_hr, y = day_of_week_str, fill = day_of_week )) +
+  geom_density_ridges(scale = 2) + 
+  theme_minimal() +
+  theme(axis.text=element_text(size=rel(0.8))) +
+  theme(legend.position='none') +
+  scale_fill_brewer(palette="RdPu")
+```
+
+# Race plot from Luis
+ 

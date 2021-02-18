@@ -71,7 +71,6 @@ data <- data %>%
     mutate(c_distance_km=cumsum(distance_km))
 ```
 
-
 Then, we are going to add string columns that convert the month number to a string (for neater plots)
 
 ```{r}
@@ -108,11 +107,13 @@ data <- data %>% arrange(days_since_jan01) %>%
   data_frame <- data_frame[which(data_frame$year==year_comparison), ]
   
   return(data_frame)
-}
+
 ```
 
 
 *Plots*
+
+
 
 
 
