@@ -132,7 +132,7 @@ cumulative_distance_line_plotly
 ```{r}
 ggplotly((ggplot(twenty20, aes(x = days_since_jan01, y=distance_km_c, color=type, text=name)) + 
   geom_point() +
-  labs(x = 'Activity', y = 'Distance') +
+  labs(x = 'Time', y = 'Distance') +
   scale_color_discrete(name = "Activity") + 
   theme_bw()), 
   tooltip="text")
@@ -199,7 +199,7 @@ ggplot(data, aes(x = moving_time_hr, y = day_of_week_str, fill = day_of_week )) 
   theme_minimal() +
   theme(axis.text=element_text(size=rel(0.8))) +
   theme(legend.position='none') +
-  scale_fill_brewer(palette="RdPu")
+  scale_fill_brewer(palette="Oranges")
 ```
 
 # Race plot from Luis

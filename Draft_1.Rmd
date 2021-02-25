@@ -7,10 +7,15 @@ output: html_document
 Quick person
 Background
 
-I think will do accessing the data and analysing in seaborn in one, and then repeat in python.
+I think will do accessing the data and analysing in seaborn in one, and then repeat in R. Want to try and keep the two separate.
+
+What makes this different: There are lots of tutorials that look at how to analyse strava data. For me, I want more than stats. I put effot in to each name and caption, and I want to be able to integrate that in to my plot. 
+So that is the aim for this tutorial. Download my strava data, collate it in to a tidy data format and create a plot, with each activity labelled so that I can observe it to reference.
+
+Could also discuss that I want to try and beat my 2020 activity in 2021, want a way to compare to this.
 
 # Accessing data
-Tutorial to get data
+Tutorial to get data in python.a
 ```{python}
 
 ```
@@ -51,7 +56,7 @@ data$day_number <- as.integer(month_df$X1)
 
 Then, we're going to neaten up the days and months. Create a named column for each of the months, and order the days so that they plot in order.
 ```{r}
-data$month_name <- with(dat, ifelse(
+data$month_name <- with(data, ifelse(
   month_of_year == 1 , 'January', ifelse(
   month_of_year == 2 , 'February', ifelse(
   month_of_year == 3 , 'March', ifelse(
@@ -66,14 +71,15 @@ data$month_name <- with(dat, ifelse(
   month_of_year == 12, 'December', NaN)))))))))))))
  
 days <- c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")
-data <- data %>% 
+# data <- data %>% 
     mutate(day_of_week_str = factor(day_of_week, levels=days)) %>%
-    mutate(c_distance_km=cumsum(distance_km))
+#    mutate(c_distance_km=cumsum(distance_km))
 ```
 
 Then, we are going to add string columns that convert the month number to a string (for neater plots)
 
 ```{r}
+year_select = 2020
 if (year_select/4 == 0){ # sort out how this interacts with the rest
     leap_days = 29
 } else {
@@ -100,22 +106,53 @@ data$month_days_since_jan01 <-NULL
 data <- data %>% arrange(days_since_jan01) %>%
     mutate(distance_km_c = cumsum(distance_km)) # Potentially don't need this because of the cumsum on ggplot variable
   
-  data_frame$X <- NULL
-  data_frame$id <- NULL
-  
-  year_comparison <- as.character(year_select)
-  data_frame <- data_frame[which(data_frame$year==year_comparison), ]
-  
-  return(data_frame)
+data$X <- NULL
+data$id <- NULL
 
+# Use this if selecting for a certain year
+year_comparison <- as.character(year_select)
+# data <- data[which(data_frame$year==year_comparison), ]
 ```
 
 
-*Plots*
+*Cumulative plot*
 
+First, lets see start with a basic cumulative plot, that shows how much I moved over time in the last year.
 
+```{r}
+baseplot <- ggplot(data, aes(x = days_since_jan01, y=cumsum(distance_km))) +
+  geom_line() + # Line graph
+  labs(x = 'Time', y = 'Distance') + # Label the axes
+  scale_x_continuous(breaks = seq(0,366,30)) + # Change tick marks x axis
+  scale_y_continuous(breaks = seq(0,2800,200)) + # Change tick marks y axis
+  theme_bw() # Remove grey background
+baseplot
+```
 
+Now we have that basic plot, we can go ahead and make it a plotly plot. ggplotly creates a wrapper around a ggplot to make it more interactive.
+```{r}
+baseplotly <- ggplotly(baseplot)
+baseplotly
+```
 
+Great, now when I scroll over the line, I can see what activity contributed to the distance.
+However, I want to be able to see the name of the activity - this evokes memories, and makes my strava data more interactive and memorable to me.
+To do this, we need to add some information in to that baseplot, and the conversion to ggplotly.
+The 'name'column is the one I want to analyse, so we add that in to the ggplot aesthetics. We then define the 'tooltip' in the ggplotly as using the name.
+For this plot, I have converted to geom_point, so that I can colour the points by the activity type they are.
+
+```{r}
+ggplotly((ggplot(data, aes(x = days_since_jan01, y=cumsum(distance_km), color=type, text=name)) + 
+  geom_point() + # geom_line not working here
+  labs(x = 'Time', y = 'Distance') +
+  scale_color_discrete(name = "Activity") + 
+  theme_bw()), 
+  tooltip="text")
+```
+
+*Second plot*
+
+Next, I want to look at a ridge plot of my activites over the year. (This wouldn't be new though)
 
 # Analysis in python
 
