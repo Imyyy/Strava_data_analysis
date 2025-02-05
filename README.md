@@ -1,4 +1,8 @@
-# Strava_data_analysis
+# 
+
+## New work aims to be ready for camino overview diagram knitting plots together
+
+## Old work was based on RMarkdown and importing
 Repo for code to bulk access and analyse/plot activities from strava.
 
 Downloading data through stravalib in jupyter, then analysing in RMarkdown.
