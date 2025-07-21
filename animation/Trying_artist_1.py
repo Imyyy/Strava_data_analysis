@@ -1,4 +1,3 @@
-
 import pandas as pd
 from matplotlib.lines import Line2D
 from cartopy import crs as ccrs, feature as cfeature
@@ -10,18 +9,21 @@ import datetime
 import matplotlib.animation as animation
 import numpy as np
 import warnings
+from animation_source import *
 warnings.filterwarnings('ignore')
-from celluloid import Camera
+
+# TODO neaten up what I have
+# TODO fix the saving issue
 
 camino = pd.read_csv("../Data/Processed_data/camino.csv")
 print(camino.columns)
 
-camino = camino[~camino['name'].str.contains('Monparnasse', case=False, na=False)]
+camino = camino[~camino['name'].str.contains('Monparnasse', case=False, na=False)] # Remove Paris, we want continuous
 
 # Sort the data frame in date order
 camino.sort_values(by='start_date_local_dt', ascending = True, inplace = True)
 
-# Processing the data
+# Unique camino list
 camino_id_list = camino.id.unique()
 
 # Create a look up dictionary for each id with day number, distance that day, names of where I walked from / to
@@ -33,23 +35,8 @@ for id in camino_id_list:
     info_lookup[id]['elevation'] = camino[camino['id'] == id]['total_elevation_gain'].iloc[0]
     info_lookup[id]['distance'] = camino[camino['id'] == id]['distance'].iloc[0]
 
-def return_lat_long(coords):
 
-    """
-    Take a polyline code, decode it into a list of latitude and longitude coordinates
-    """
-
-    # TODO turn it into a dictionary of lists so we can add in total distance and day
-
-    data = {}
-
-    coordinates = polyline.decode(coords)
-
-    latitudes = [coordinate[0] for coordinate in coordinates]
-    longitudes = [coordinate[1] for coordinate in coordinates]
-
-    return latitudes, longitudes
-
+# Create dictionary with lat long and id lists, for a list of given id's
 data = {}
 data['all_camino_longs'] = []
 data['all_camino_lats'] = []
@@ -73,22 +60,9 @@ print(len(data['all_camino_lats']))
 print(len(data['all_camino_longs']))
 print(len(data['id']))
 
-########################################################################################################################
-# Geeks for geeks tutorial
-# https://www.geeksforgeeks.org/python/matplotlib-animate-multiple-lines/
+### Animate ############################################################################################################
 
-
-########################################################################################################################
-import pandas as pd
-import polyline
-import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-import datetime
-import numpy as np
-import warnings
-warnings.filterwarnings('ignore')
-
-# Lets try and bring the maps in to this
+# Map criteria
 projPC = ccrs.PlateCarree()
 latN = 44
 latS = 41.5
@@ -111,24 +85,7 @@ ax.add_feature(cfeature.LAND, alpha=0.9)
 ax.add_feature(cfeature.OCEAN, alpha=0.6)
 ax.add_feature(cfeature.BORDERS, linewidth=0.5, edgecolor='grey')
 
-# counter = 0
-# for id in camino_id_list:
-#
-#     coords = camino[camino['id'] == id]['map.summary_polyline'].iloc[0]
-#
-#     long, lat = return_lat_long(coords)
-#
-#     if counter % 2 == 0:
-#         col_to_plot = "coral"
-#     else:
-#         col_to_plot = "red"  # deeppink
-#
-#     plt.plot(long, lat, 'r-', alpha=1, color=col_to_plot)
-#
-#     counter += 1
-
 xdata, ydata = [], []
-
 line, = ax.plot([], [], lw=2)
 
 def init():
@@ -138,7 +95,7 @@ def init():
 def animate(i):
     # t is a parameter which varies
     # with the frame number
-    t = i # 0.1 * i # 100 + i
+    t = i
 
     # x, y values to be plotted
     # x = sampled_longs[t] # t * np.sin(t)
@@ -159,8 +116,7 @@ def animate(i):
     dist = info_lookup[id]['distance']
 
     # Remove old legend and add a new one
-    # line.set_label()
-    # line.set_label(f'{title}')
+    # TODO better handle legend postitioning
     legend_handle = Line2D([0], [0], color='none', label=f'{title} \n Dist: {round(dist/100)}km \n Elev: {round(elev)}m')
     ax.legend(handles=[legend_handle], bbox_to_anchor=(0.4, -0.07))
 
@@ -171,7 +127,7 @@ def animate(i):
 #                                frames=200, interval=0.01, blit=True)
 frames = range(0, len(data['all_camino_lats']), 30)
 anim = animation.FuncAnimation(fig, animate, init_func=init,
-                               frames=frames, interval=20, blit=False)
+                               frames=frames, interval=20, blit=False)  # Blit false for debugging and line options
 
 # anim.save(filename="test.gif", fps=30, writer="pillow")
 
